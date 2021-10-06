@@ -30,28 +30,30 @@ def recibir(orden):
             s.send_multipart(['termino'.encode()])
             break
         else:
-            image_result = open('C:\\Users\\Sofia\\Documents\\utp\\arquitectura\\semana6\\servidor\\'+orden[0]+'\\'+orden[2], 'wb')#Cambiar con respecto al usuario,escritura y binario
+            image_result = open('C:\\Users\\Sofia\\Documents\\utp\\arquitectura\\segundaentrega\\servidor\\'+orden[2], 'wb')#Cambiar con respecto al usuario,escritura y binario
             image_result.write(image_64_decode)
-            size_file = os.path.getsize('C:\\Users\\Sofia\\Documents\\utp\\arquitectura\\semana6\\servidor\\'+orden[0]+'\\'+orden[2])
+            size_file = os.path.getsize('C:\\Users\\Sofia\\Documents\\utp\\arquitectura\\segundaentrega\\servidor\\'+orden[2])
             mensaje='documento cargado'+ str(size_file)
-            #print(size_file,tamanoArchivo)
-            print(size_file)
+            print('cantidad cargada: ',size_file)
             s.send_multipart([mensaje.encode()])
+
+            #recibir nuevas partes del documento
             m=s.recv_multipart()
             orden=[m[0].decode("utf-8"),m[1].decode("utf-8"),m[2].decode("utf-8"),m[3]]
 
 while True:
     print("calculando...")
     m=s.recv_multipart()
+    #     [orden.encode(),nombreArchivo.encode(),llaveDelArchivo.encode(),image_64_encode]
     orden=[m[0].decode("utf-8"),m[1].decode("utf-8"),m[2].decode("utf-8"),m[3]]
-    if orden[1]=='upload':
+    if orden[0]=='upload':
         recibir(orden)
-    if orden[1]=='download' or orden[1]=='downloadlink':
+    if orden[0]=='download' or orden[1]=='downloadlink':
         enviar(orden[0],orden[1],orden[2],'C:\\Users\\Sofia\\Documents\\utp\\arquitectura\\semana6\\servidor\\'+orden[0]+'\\'+orden[2])
-    if orden[1]=='sharelink':
+    if orden[0]=='sharelink':
         mensaje='C:\\Users\\Sofia\\Documents\\utp\\arquitectura\\semana6\\servidor\\'+orden[0]+'\\'+orden[2]
         s.send_multipart([mensaje.encode()])
-    if orden[1]=='list':
+    if orden[0]=='list':
         list = os.listdir("servidor/"+orden[0]) # dir is your directory path
         mensaje="archivos: "+ str(list)
         s.send_multipart([mensaje.encode()])

@@ -2,28 +2,18 @@ import zmq #provee la comunicacion a traves de sockets (hulk)
 import sys
 import base64
 import os
-#import json
 from shasum import *
 from shasumtexto import *
-from servidorcentral import *
+from crearServidores import *
+
+servidores=crearServidores()
+rangos=rangos(servidores)
+
+
 context = zmq.Context()#black box!!
 link=' '
 tamanoArchivo=0
 llave=''
-new_data={}
-servidores={}
-for i in range(3):
-    servidores[randomName()]='tcp://localhost:'+str(8000+i)
-
-#with open('op.json') as file:
-#     new_data = json.load(file) #cargo el archivo json
-#file.close()
-
-def get_key(val):
-    for key, value in new_data.items():
-         if val == value:
-             return key
-
 
 def recibir(direccion,archivo):
     while True:
@@ -42,24 +32,9 @@ def recibir(direccion,archivo):
             print(size_file)
             s.send_multipart([mensaje.encode()])
 
-def enviar(username,orden,nombreArchivo,direccion,puerto):
-
-    llavesServidores=[]
-    for key in servidores:
-        llavesServidores.append(key)
-    llavesServidores.sort()
-    rangos=[]
-    #print(llavesServidores)
-    for n in range(len(llavesServidores)-1):
-        #print('n: ',n)
-        lb=llavesServidores[n]
-        #print('lb: ',lb)
-        ub=llavesServidores[n+1]
-        #print('ub: ',ub)
-        rangos.append(Range(lb,ub))
-    rangos.append(Range(llavesServidores[len(llavesServidores)-1],llavesServidores[0]))
-    for r in rangos:
-        print(r.toStr())
+def enviar(username,orden,nombreArchivo,direccion):
+    #Crea un socket y lo conecta a traves del protocolo tcp con el equipo local en el puerto 8001
+    s = context.socket(zmq.REQ)
 
     f = open(direccion, 'rb')# R lee el archivo en modo binario B
     while True:
@@ -70,17 +45,15 @@ def enviar(username,orden,nombreArchivo,direccion,puerto):
             break
         image_64_encode = base64.encodebytes(archivoLeido)
         llaveDelArchivo=shasumtexto(image_64_encode)
-        i=1
+        numDelServidor=1
         for r in rangos:
             if r.member(int(llaveDelArchivo,16)):
-                #print('llave Del Archivo: ',llaveDelArchivo,' al rango: ',r.toStr(),' servidor: ', i)
+                print('llave Del Archivo: ',llaveDelArchivo,' al rango: ',r.toStr(),' servidor: ', numDelServidor)
                 break
-            i+=1
-
-        #Crea un socket y lo conecta a traves del protocolo tcp con el equipo local en el puerto 8001
-        s = context.socket(zmq.REQ)
-        s.connect('tcp://localhost:'+str(8000+i))
-        s.send_multipart([username.encode(),orden.encode(),nombreArchivo.encode(),image_64_encode])
+            numDelServidor+=1
+        s.connect('tcp://localhost:'+str(8000+numDelServidor))
+        #                [m[0].decode("utf-8"),m[1].decode("utf-8"),m[2].decode("utf-8"),m[3]]
+        s.send_multipart([orden.encode(),nombreArchivo.encode(),llaveDelArchivo.encode(),image_64_encode])
         respuesta=s.recv_multipart()
         print(respuesta)
     f.close()
@@ -96,18 +69,8 @@ orden = sys.argv[2]
 nombreArchivo = sys.argv[3]
 
 if orden=='upload':
-    direccion='C:\\Users\\Sofia\\Documents\\utp\\arquitectura\\semana6\\'+nombreArchivo
-    #llave=shasum('C:\\Users\\Sofia\\Documents\\utp\\arquitectura\\semana6\\'+nombreArchivo)
-    #if llave in new_data:
-    #    print('ya esta el archivo')
-    #else:
-    #    if nombreArchivo in new_data.values():
-    #        new_data.pop(get_key(nombreArchivo))
-    #    new_data[llave] = nombreArchivo  #agrego valores al nuevo diccionario
-    #    with open('op.json','w') as file:
-    #        json.dump(new_data,file)
-    #    file.close()
-    enviar(username,orden,nombreArchivo,direccion,8003)
+    direccion='C:\\Users\\Sofia\\Documents\\utp\\arquitectura\\segundaentrega\\'+nombreArchivo
+    enviar(username,orden,nombreArchivo,direccion)
 
 else:
     if orden=='downloadlink':
