@@ -18,21 +18,15 @@ tamanoArchivo=0
 llave=''
 
 def recibir():
-    #while True:
     print("recibiendo...")
     m=s.recv_multipart()
     orden=[m[0].decode("utf-8"),m[1]]
     image_64_decode = base64.decodebytes(orden[1])
-    #    if image_64_decode==b'0':
-    #        break
-    #    else:
     image_result = open('C:\\Users\\Sofia\\Documents\\utp\\arquitectura\\segundaentrega\\'+orden[0], 'ab')#Cambiar con respecto al usuario,escritura y binario
     image_result.write(image_64_decode)
     size_file = os.path.getsize('C:\\Users\\Sofia\\Documents\\utp\\arquitectura\\segundaentrega\\'+orden[0])
     mensaje='documento cargado'
-            #print(size_file,tamanoArchivo)
     print(size_file)
-    #s.send_multipart([mensaje.encode()])
 
 def enviar(username,orden,nombreArchivo,direccion):
     #Crea un socket y lo conecta a traves del protocolo tcp con el equipo local en el puerto 8001
@@ -43,7 +37,6 @@ def enviar(username,orden,nombreArchivo,direccion):
         archivoLeido = f.read(1024*1024)
         if not archivoLeido:
             image_64_encode = base64.encodebytes(b'0')
-    #        s.send_multipart([username.encode(),orden.encode(),nombreArchivo.encode(),image_64_encode])
             break
         image_64_encode = base64.encodebytes(archivoLeido)
         llaveDelArchivo=shasumtexto(image_64_encode)
@@ -60,8 +53,7 @@ def enviar(username,orden,nombreArchivo,direccion):
         respuesta=s.recv_multipart()
         print(respuesta)
     f.close()
-    #respuesta=s.recv_multipart()
-    #print(respuesta)
+
 
 
 
@@ -79,25 +71,7 @@ if orden=='upload':
     file.close()
     print(archivo)
 else:
-    if orden=='downloadlink':
-        try:
-            partes = nombreArchivo.split("\\")
-            nombreUsuarioDueno=partes[8]
-            link=partes[9]
-            #tamanoArchivo=os.path.getsize(nombreArchivo)
-            mensaje=' '
-            print([nombreUsuarioDueno.encode(),orden.encode(),link.encode(),mensaje.encode()])
-            s.send_multipart([nombreUsuarioDueno.encode(),orden.encode(),link.encode(),mensaje.encode()])
-            recibir('C:\\Users\\Sofia\\Documents\\utp\\arquitectura\\semana6\\servidor\\'+username+'\\',link)
-        except:
-            print('no se ha cargado el archivo')
-    if orden=='sharelink':
-        mensaje=' '
-        s.send_multipart([username.encode(),orden.encode(),nombreArchivo.encode(),mensaje.encode()])
-        respuesta=s.recv_multipart()
-        print(respuesta[0].decode("utf-8"))
     if orden=='download':
-        #tamanoArchivo=os.path.getsize('/home/sofia/Documentos/utp/arquitectura/semana6/servidor/'+username+'/'+nombreArchivo)
         #lee el archivo... lo extrae y lo mete en el diccionario archivo
         with open(nombreArchivo+'.json') as file:
             archivo = json.load(file) #cargo el archivo json
@@ -109,6 +83,9 @@ else:
             recibir()
     if orden=='list':
         mensaje=' '
-        s.send_multipart([username.encode(),orden.encode(),nombreArchivo.encode(),mensaje.encode()])
+        nombreServidorAConsultar=nombreArchivo
+        s = context.socket(zmq.REQ)
+        s.connect('tcp://localhost:'+str(8000+int(nombreServidorAConsultar)))
+        s.send_multipart([orden.encode(),nombreServidorAConsultar.encode(),mensaje.encode(),mensaje.encode()])
         respuesta=s.recv_multipart()
         print(respuesta[0].decode("utf-8"))
